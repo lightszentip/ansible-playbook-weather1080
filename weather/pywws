@@ -1,0 +1,32 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          pywws 
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:    2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: start/stop pywws weather logging
+# Description:       Start/stop the python tool pywws to read an process weather station data 
+#                   
+### END INIT INFO
+PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin
+DESC="pywws LiveLog"
+NAME=pywws-livelog.py
+DAEMON=/usr/local/bin/$NAME
+DAEMON_ARGS="-vv -l /home/pi/weather/weather-data/log/livelog.txt /home/pi/weather/weather-data"
+case "$1" in
+  start)
+        echo -n "Starting $DESC: "
+        start-stop-daemon --start --chuid pi:weather --pidfile /var/run/$NAME.pid \
+            --make-pidfile --background --startas $DAEMON -- $DAEMON_ARGS
+        echo "$NAME."
+        ;;
+  stop)
+        echo -n "Stopping $DESC: "
+        start-stop-daemon --stop --quiet --oknodo \
+        --pidfile /var/run/$NAME.pid
+        rm -f /var/run/$NAME.pid
+        echo "$NAME."
+        ;;
+esac
+:

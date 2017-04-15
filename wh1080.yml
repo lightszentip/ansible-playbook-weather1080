@@ -1,0 +1,109 @@
+---
+- hosts: pi
+  become: true
+  tasks:
+  - name: install base packages
+    apt: pkg={{item}} state=present update_cache=yes cache_valid_time=604800
+    with_items:
+      - python-pip
+      - git
+      - python-samba
+      - vim
+      - php
+      - php7.1
+      - php7.1-mysql
+      - python-gdal
+      - python-dev
+      - libusb-1.0-0
+      - libudev-dev
+      - python-usb
+      - python-crypto
+  - name: Install global python requirements
+    pip: name={{item}} state=present
+    with_items:
+      - pywws
+      - pyusb
+  - name: Test wetterstation
+    shell: python -m pywws.TestWeatherStation
+  - name: Change intervall to 1
+    shell: python -m pywws.SetWeatherStation -r 1
+  - group:
+      name: weather
+      state: present
+  - user:
+      name: weather
+      shell: /bin/false
+      group: weather
+      groups: plugdev,users,input
+      append: yes
+  - file:
+      path: /home/pi/weather/data
+      state: directory
+      mode: 0777
+      group: weather
+  - file:
+      path: /home/pi/weather/scripts
+      state: directory
+      mode: 0777
+      group: weather
+  - file:
+      path: /home/pi/weather/weather-data/templates
+      state: directory
+      mode: 0777
+      group: weather
+  - file:
+      path: /home/pi/weather/weather-data/log
+      state: directory
+      mode: 0777
+      group: weather
+  - file:
+      path: /home/pi/weather/weather-data/temp
+      state: directory
+      mode: 0777
+      group: weather
+  - file:
+      path: /home/pi/weather/weather-data/results
+      state: directory
+      mode: 0777
+      group: weather
+  - name: Copy rules
+    copy:
+      src: ./weather/38-weather-station.rules
+      dest: /etc/udev/rules.d/38-weather-station.rules
+  - name: Copy configuration
+    copy:
+      src: ./weather/weather.ini
+      dest: /home/pi/weather/data/weather.ini
+      mode: 0644
+  - name: Copy templates
+    shell: "cp /usr/local/lib/python2.7/dist-packages/pywws/examples/templates/* /home/pi/weather/weather-data/templates/ -R"
+  - name: copy files to new datadir
+    shell: "sudo chown pi:weather /home/pi/weather/weather-data/templates -R"
+  - name: Copy configuration
+    copy:
+      src: ./weather/pywws
+      dest: /etc/init.d/pywws
+      mode: "a+x"
+  - name: Copy template
+    copy:
+      src: ./weather/liveCopy.json
+      dest: /home/pi/weather/weather-data/templates/liveCopy.json
+  - name: Copy template
+    # copy each file over that matches the given pattern
+    copy: src={{ item }} dest=/home/pi/weather/scripts/ owner=root mode=600
+    with_fileglob:
+      - ./weather/scripts/*
+  - name: Create / Update service
+    shell: update-rc.d pywws defaults
+  - cron:
+      name: "weather Hourly"
+      minute: "5"
+      job: "python -m pywws.Hourly /home/pi/weather/data >> /home/pi/weather/weather-data/log/weatherHourly.log 2>&1"
+  - cron:
+      name: "weather live"
+      minute: "*/3"
+      job: "python -m pywws.LiveLog /home/pi/weather/data >> //home/pi/weather/weather-data/log/weatherLive.log 2>&1"
+  - cron:
+      name: "weather copy files into database"
+      minute: "*/3"
+      job: "php7.1 /home/pi/weather/scripts/save-json-data.php >> /home/pi/weather/weather-data/log/saveDataMySQL.log 2>&1"

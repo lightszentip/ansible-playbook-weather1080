@@ -1,0 +1,4 @@
+# WH-1080 Weather Station
+ACTION!="add|change", GOTO="weather_station_end"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="1941", ATTRS{idProduct}=="8021", GROUP="weather"
+LABEL="weather_station_end"
