@@ -1,5 +1,7 @@
 # ansible-playbook-weather1080
 
+Installation script for a weather station ws1080 or ws3000 with pywws and transfer data to mysql database
+
 ## Pre Task
 
 * install mysql or mariadb
