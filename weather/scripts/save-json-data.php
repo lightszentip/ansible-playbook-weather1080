@@ -41,7 +41,8 @@ foreach($json['data'] as $e){
             'windgust'=> $data['WindGust'],
             'windchill'=> str_replace(",",".",$data['WindChill']),
             'rain'=> str_replace(",",".",$data['Rain']),
-            'abspressure'=> str_replace(",",".",$data['AbsPressure'])
+            'abspressure'=> str_replace(",",".",$data['AbsPressure']),
+            'rainwhole'=> str_replace(",",".",data['RainWhole'])
 
         );
 
